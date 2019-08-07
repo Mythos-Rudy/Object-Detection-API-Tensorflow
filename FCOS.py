@@ -105,11 +105,6 @@ class FCOS:
             p3, _ = self._get_pyramid(c3, 256, top_down)
             p6 = self._bn_activation_conv(p5, 256, 3, 2)
             p7 = self._bn_activation_conv(p6, 256, 3, 2)
-            p3 = tf.nn.relu(p3)
-            p4 = tf.nn.relu(p4)
-            p5 = tf.nn.relu(p5)
-            p6 = tf.nn.relu(p6)
-            p7 = tf.nn.relu(p7)
         with tf.variable_scope('head'):
             p3conf, p3reg, p3center = self._detect_head(p3)
             p4conf, p4reg, p4center = self._detect_head(p4)
@@ -330,10 +325,9 @@ class FCOS:
         tb_max = tf.maximum(dist_t, dist_b)
         center_pred = tf.squeeze(center_pred)
         center_gt = tf.sqrt(lr_min*tb_min/(lr_max*tb_max+1e-12))
-        center_pos_loss = -center_gt*tf.log_sigmoid(center_pred) * loc
-        center_neg_loss = -(1.-center_gt)*(-center_pred+tf.log_sigmoid(center_pred)) * (1.-loc)
-        center_loss = tf.reduce_sum(center_pos_loss) + tf.reduce_sum(center_neg_loss)
         # center_loss = tf.square(center_pred - center_gt)
+        center_loss = tf.keras.backend.binary_crossentropy(output=center_pred, target=center_gt, from_logits=True)
+        center_loss = tf.reduce_sum(center_loss)
 
         zero_like_heat = tf.expand_dims(tf.zeros(pshape, dtype=tf.float32), axis=-1)
         heatmap_gt = []
